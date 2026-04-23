@@ -1,0 +1,198 @@
+Hello.
+Good morning.
+Good evening.
+Goodbye.
+Thank you.
+Thank you very much.
+Sorry.
+It's okay.
+How are you?
+I'm fine.
+What's your name?
+My name is Li Ming.
+Where are you from?
+I'm from China.
+Nice to meet you.
+The weather is good today.
+It's raining today.
+It's windy today.
+It's sunny today.
+It's cloudy today.
+What time is it now?
+It's three o'clock now.
+Are you hungry?
+I'm a little hungry.
+Are you thirsty?
+I'm thirsty.
+Are you tired?
+I'm not tired.
+Please sit down.
+Come in please.
+Please wait a moment.
+Please help me.
+No problem.
+Of course.
+Okay.
+No.
+Yes.
+I like apples.
+I like bananas.
+I like oranges.
+I like drinking water.
+I like drinking tea.
+I like drinking coffee.
+I like eating.
+I like studying.
+I like reading books.
+I like doing sports.
+I like music.
+I like movies.
+I like traveling.
+I like summer.
+I like winter.
+I like spring.
+I like autumn.
+Today is Monday.
+Today is Tuesday.
+Today is Wednesday.
+Today is Thursday.
+Today is Friday.
+Today is Saturday.
+Today is Sunday.
+I am a student.
+He is a teacher.
+She is a doctor.
+He is a worker.
+She is a nurse.
+He is an engineer.
+She is a programmer.
+He is a driver.
+She is a cook.
+He is a policeman.
+I can speak Chinese.
+I can speak a little English.
+Can you speak Chinese?
+Can you speak English?
+I can't speak Japanese.
+I want to learn English.
+I want to improve my oral English.
+I want to memorize words.
+I want to read books.
+I want to sleep.
+I want to drink water.
+I want to eat something.
+I want to go out to play.
+I want to go home.
+I want to work.
+I want to rest.
+I get up early every day.
+I eat breakfast every day.
+I have classes every day.
+I do homework every day.
+I exercise every day.
+I listen to music every day.
+I watch news every day.
+I take a shower every day.
+I go to bed early every day.
+There are three people in my family.
+My father is a worker.
+My mother is a teacher.
+I have an elder brother.
+I have a younger sister.
+I love my family.
+This is my book.
+This is my pen.
+This is my phone.
+This is my computer.
+This is my room.
+This is my schoolbag.
+This is my cup.
+This is my clothes.
+This is my shoes.
+This is my desk.
+This is a chair.
+This is a window.
+This is a door.
+This is a light.
+This is a bed.
+This is a sofa.
+This is a fridge.
+This is a TV.
+This is an air conditioner.
+This is a washing machine.
+I am at school.
+I am at home.
+I am at the company.
+I am in the park.
+I am in the supermarket.
+I am in the library.
+I am in the hospital.
+I am in the bank.
+I am at the station.
+I am at the airport.
+I am going to school.
+I am going home.
+I am going to the supermarket.
+I am going to the park.
+I am going to the library.
+I am going to the hospital.
+I am going to the bank.
+I am going to the station.
+I am going to the airport.
+I want to eat.
+I want to drink water.
+I want to sleep.
+I want to study.
+I want to work.
+I want to exercise.
+I want to take a shower.
+I want to go out.
+I want to come back.
+I bought apples.
+I bought bananas.
+I bought bread.
+I bought milk.
+I bought eggs.
+I bought water.
+I bought clothes.
+I bought shoes.
+I bought books.
+I bought pens.
+How much is it?
+This is ten yuan.
+That is twenty yuan.
+It's too expensive.
+Cheaper please.
+I want this.
+I don't want that.
+Here is the money.
+Here is your change.
+Thank you for your patronage.
+Welcome next time.
+I am very happy today.
+I am very sad today.
+I am very angry today.
+I am very relaxed today.
+I am very excited today.
+Are you happy?
+Don't be sad.
+Don't be angry.
+Take it easy.
+Come on.
+Good luck.
+Happy birthday.
+Happy New Year.
+Merry Christmas.
+Happy holidays.
+Good health.
+All the best.
+Have a nice trip.
+Enjoy your journey.
+Get well soon.
+Wish you prosperity.
+May all your wishes come true.
+Progress in study.
+Smooth work.
+Happy life.
+Happy family.
+Friendship forever.

@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import math
 import numpy as np
+import os
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 
@@ -312,11 +313,9 @@ class NoamScheduler:
 # --------------------------
 class TranslationDataset(Dataset):
     """简单的翻译数据集示例"""
-    def __init__(self, src_data, tgt_data, src_vocab, tgt_vocab, max_len=128):
+    def __init__(self, src_data, tgt_data, max_len=128):
         self.src_data = src_data
         self.tgt_data = tgt_data
-        self.src_vocab = src_vocab
-        self.tgt_vocab = tgt_vocab
         self.max_len = max_len
 
     def __len__(self):
@@ -478,39 +477,128 @@ def greedy_decode(model, src, src_mask, max_len, start_symbol, end_symbol, devic
             
     return ys
 
+@torch.no_grad()
+def greedy_translate(model, src_sent, src_vocab, tgt_vocab, max_len=64, device='cuda'):
+    model.eval()
+    tokens = tokenize_zh(src_sent)
+    src_ids = src_vocab.encode(tokens)
+    src = torch.tensor([src_ids]).to(device)
+    src_mask = generate_padding_mask(src, 0).to(device)
+
+    enc_out = model.encode(src, src_mask)
+    ys = torch.tensor([[2]], device=device)
+
+    for _ in range(max_len-1):
+        tgt_mask = generate_subsequent_mask(ys.size(1), device)
+        out = model.decode(ys, enc_out, src_mask, tgt_mask)
+        _, next_word = out[:, -1].max(1)
+        ys = torch.cat([ys, next_word.unsqueeze(0)], dim=1)
+        # 强制生成至少3个token，避免只输出单个词
+        if next_word.item() == 3 and len(ys[0]) > 3:
+            break
+
+    result = tgt_vocab.decode(ys[0].tolist())
+    return result if result else "(模型未学到有效翻译)"
 # --------------------------
 # 13. 完整测试示例
 # --------------------------
-def create_dummy_data(num_samples=1000, src_vocab_size=100, tgt_vocab_size=100, max_len=20):
-    """创建虚拟数据用于测试"""
-    src_data = []
-    tgt_data = []
+
+# 加载双语数据
+def load_bilingual_data(zh_path, en_path):
+    zh_lines = []
+    en_lines = []
+    print(f"尝试读取文件：{zh_path}")
+    print(f"文件是否存在：{os.path.exists(zh_path)}")
+    print(f"文件大小：{os.path.getsize(zh_path)} 字节")
+
+    with open(zh_path, "r", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if stripped:  # 跳过空行
+                zh_lines.append(stripped)
+
+    print(f"读取到中文句子数：{len(zh_lines)}")
+
+    print(f"尝试读取文件：{en_path}")
+    print(f"文件是否存在：{os.path.exists(en_path)}")
+    print(f"文件大小：{os.path.getsize(en_path)} 字节")
+
+    with open(en_path, "r", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if stripped:
+                en_lines.append(stripped)
+
+    print(f"读取到英文句子数：{len(en_lines)}")
+
+    assert len(zh_lines) == len(en_lines), f"句子数量不一致！中文{len(zh_lines)}条，英文{len(en_lines)}条"
+    assert len(zh_lines) > 0, "文件是空的！"
+    return zh_lines, en_lines
+
+# 分词
+def tokenize_zh(sent):
+    # 中文：按单字切分
+    return list(sent)
+
+def tokenize_en(sent):
+    # 英文：按空格切分
+    return sent.lower().split()
+
+# 构建词表
+class Vocab:
+    def __init__(self):
+        # 特殊标记，和你代码对应
+        self.specials = ["<pad>", "<unk>", "<bos>", "<eos>"]
+        self.word2idx = {}
+        self.idx2word = []
+        for w in self.specials:
+            self.add_word(w)
+
+    def add_word(self, word):
+        if word not in self.word2idx:
+            self.word2idx[word] = len(self.idx2word)
+            self.idx2word.append(word)
     
-    for _ in range(num_samples):
-        src_len = np.random.randint(5, max_len)
-        tgt_len = np.random.randint(5, max_len)
-        
-        # 加入 BOS/EOS
-        src = [np.random.randint(1, src_vocab_size) for _ in range(src_len)]
-        tgt = [2] + [np.random.randint(3, tgt_vocab_size) for _ in range(tgt_len)] + [3]
-        
-        src_data.append(src)
-        tgt_data.append(tgt)
+    def build(self, sentences_list):
+        for sent in sentences_list:
+            for w in sent:
+                self.add_word(w)
+
+    def encode(self, tokens):
+        # 句子转id，首尾加 bos/eos
+        ids = [self.word2idx.get(t, 1) for t in tokens]
+        return [2] + ids + [3]   # 2=bos, 3=eos
+
+    def decode(self, ids):
+        words = []
+        for i in ids:
+            if i == 3:  # 遇到 <eos> 停止解码
+                break
+            if i >= 4:  # 跳过特殊标记
+                words.append(self.idx2word[i])
     
-    return src_data, tgt_data
+        # 处理空列表的情况
+        if not words:
+            return ""
+    
+        # 中文直接拼接，英文用空格分隔
+        return ''.join(words) if not words[0].isalpha() else ' '.join(words)
+    
+    def __len__(self):
+        return len(self.idx2word)
 
 if __name__ == "__main__":
     # 超参数
     SRC_VOCAB_SIZE = 100
     TGT_VOCAB_SIZE = 100
-    D_MODEL = 256
-    N_LAYERS = 3
-    N_HEADS = 8
-    D_FF = 512
-    MAX_LEN = 128
+    D_MODEL = 128
+    N_LAYERS = 2
+    N_HEADS = 4
+    D_FF = 256
+    MAX_LEN = 64
     DROPOUT = 0.1
-    BATCH_SIZE = 32
-    EPOCHS = 10
+    BATCH_SIZE = 8
+    EPOCHS = 80
     
     SRC_PAD_IDX = 0
     TGT_PAD_IDX = 0
@@ -520,27 +608,45 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
     
-    # 创建虚拟数据
-    print("Creating dummy data...")
-    src_data, tgt_data = create_dummy_data(1000, SRC_VOCAB_SIZE, TGT_VOCAB_SIZE)
-    
-    # 数据集和数据加载器
-    train_dataset = TranslationDataset(src_data[:800], tgt_data[:800], None, None, MAX_LEN)
-    val_dataset = TranslationDataset(src_data[800:], tgt_data[800:], None, None, MAX_LEN)
-    
-    train_loader = DataLoader(
-        train_dataset, 
-        batch_size=BATCH_SIZE, 
-        shuffle=True,
-        collate_fn=lambda batch: collate_fn(batch, SRC_PAD_IDX, TGT_PAD_IDX)
-    )
-    
-    val_loader = DataLoader(
-        val_dataset, 
-        batch_size=BATCH_SIZE, 
-        shuffle=False,
-        collate_fn=lambda batch: collate_fn(batch, SRC_PAD_IDX, TGT_PAD_IDX)
-    )
+    # 1. 加载中英双语
+    zh_sents, en_sents = load_bilingual_data("zh.txt", "en.txt")
+
+    # 2. 分词
+    zh_tokens = [tokenize_zh(s) for s in zh_sents]
+    en_tokens = [tokenize_en(s) for s in en_sents]
+
+    # 3. 构建词表
+    src_vocab = Vocab()   # 中文词表
+    tgt_vocab = Vocab()   # 英文词表
+    src_vocab.build(zh_tokens)
+    tgt_vocab.build(en_tokens)
+
+    # 4. 文本转 id 序列
+    src_data = [src_vocab.encode(toks) for toks in zh_tokens]
+    tgt_data = [tgt_vocab.encode(toks) for toks in en_tokens]
+
+    # 5. 划分训练/验证
+    split = int(len(src_data) * 0.8)
+    train_src, val_src = src_data[:split], src_data[split:]
+    train_tgt, val_tgt = tgt_data[:split], tgt_data[split:]
+
+    # 6. 数据集
+    train_ds = TranslationDataset(train_src, train_tgt, MAX_LEN)
+    val_ds   = TranslationDataset(val_src, val_tgt, MAX_LEN)
+    assert len(train_src) > 0 and len(train_tgt) > 0, "训练数据为空！请检查 zh.txt / en.txt 是否存在且非空。"
+    assert len(val_src) > 0 and len(val_tgt) > 0, "验证数据为空！请检查 zh.txt / en.txt 是否存在且非空。"
+
+    train_ds = TranslationDataset(train_src, train_tgt, MAX_LEN)
+    val_ds   = TranslationDataset(val_src, val_tgt, MAX_LEN)
+
+    # 再检查一下数据集长度
+    print(f"训练集长度: {len(train_ds)}")
+    print(f"验证集长度: {len(val_ds)}")
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, collate_fn=lambda b: collate_fn(b, SRC_PAD_IDX, TGT_PAD_IDX))
+    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, collate_fn=lambda b: collate_fn(b, SRC_PAD_IDX, TGT_PAD_IDX))
+    # 7. 修改模型词表大小
+    SRC_VOCAB_SIZE = len(src_vocab)
+    TGT_VOCAB_SIZE = len(tgt_vocab)
     
     # 初始化模型
     print("Initializing model...")
@@ -579,21 +685,16 @@ if __name__ == "__main__":
     trainer.train(EPOCHS)
     
     # 测试推理
-    print("\nTesting inference...")
-    model.eval()
-    test_src = torch.randint(1, SRC_VOCAB_SIZE, (1, 10)).to(device)
-    src_mask = generate_padding_mask(test_src, SRC_PAD_IDX).to(device)
-    
-    result = greedy_decode(
-        model, test_src, src_mask, 
-        max_len=MAX_LEN, 
-        start_symbol=BOS_IDX, 
-        end_symbol=EOS_IDX,
-        device=device
-    )
-    
-    print(f"Input shape: {test_src.shape}")
-    print(f"Input sequence: {test_src[0].tolist()}")
-    print(f"Output shape: {result.shape}")
-    print(f"Output sequence: {result[0].tolist()}")
-    print("\n✅ Transformer 完整实现测试成功！")
+    # 测试翻译
+print("\n===== 测试翻译 =====")
+test_sentences = [
+    "你好",
+    "我是学生",
+    "今天天气很好",
+    "我喜欢学习",
+    "谢谢"
+]
+for s in test_sentences:
+    trans = greedy_translate(model, s, src_vocab, tgt_vocab, device=device)
+    print(f"中文: {s}")
+    print(f"英文: {trans}\n")
